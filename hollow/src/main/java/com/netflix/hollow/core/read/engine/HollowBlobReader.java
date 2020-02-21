@@ -33,6 +33,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
 import java.util.Collection;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -62,8 +63,8 @@ public class HollowBlobReader {
      * @param f the RandomAccessFile to read the snapshot from
      * @throws IOException if the snapshot could not be read
      */
-    public void readSnapshot(RandomAccessFile f) throws IOException {
-        readSnapshot(f, new HollowFilterConfig(true));
+    public void readSnapshot(RandomAccessFile f, MappedByteBuffer buffer) throws IOException {
+        readSnapshot(f, buffer, new HollowFilterConfig(true));
     }
 
     /**
@@ -75,7 +76,7 @@ public class HollowBlobReader {
      * @param filter the filtering configuration to filter the snapshot
      * @throws IOException if the snapshot could not be read
      */
-    public void readSnapshot(RandomAccessFile raf, HollowFilterConfig filter) throws IOException {
+    public void readSnapshot(RandomAccessFile raf, MappedByteBuffer buffer, HollowFilterConfig filter) throws IOException {
         HollowBlobHeader header = readHeader(raf, false);
 
         notifyBeginUpdate();
@@ -86,7 +87,7 @@ public class HollowBlobReader {
 
         Collection<String> typeNames = new TreeSet<>();
         for(int i=0;i<numStates;i++) {
-            String typeName = readTypeFileSnapshot(raf, header, filter);
+            String typeName = readTypeFileSnapshot(raf, buffer, header, filter);
             typeNames.add(typeName);
         }
 
@@ -164,7 +165,7 @@ public class HollowBlobReader {
         }
     }
 
-    private String readTypeFileSnapshot(RandomAccessFile raf, HollowBlobHeader header, HollowFilterConfig filter) throws IOException {
+    private String readTypeFileSnapshot(RandomAccessFile raf, MappedByteBuffer buffer, HollowBlobHeader header, HollowFilterConfig filter) throws IOException {
         HollowSchema schema = HollowSchema.readFrom(raf);
 
         int numShards = readNumShards(raf);
@@ -175,34 +176,34 @@ public class HollowBlobReader {
             } else {
                 HollowObjectSchema unfilteredSchema = (HollowObjectSchema)schema;
                 HollowObjectSchema filteredSchema = unfilteredSchema.filterSchema(filter);
-                populateTypeStateSnapshot(raf, new HollowObjectTypeReadState(stateEngine, filteredSchema, unfilteredSchema, numShards));
+                populateTypeStateSnapshot(raf, buffer, new HollowObjectTypeReadState(stateEngine, filteredSchema, unfilteredSchema, numShards));
             }
         } else if (schema instanceof HollowListSchema) {
             if(!filter.doesIncludeType(schema.getName())) {
 //                HollowListTypeReadState.discardSnapshot(is, numShards);
             } else {
-                populateTypeStateSnapshot(raf, new HollowListTypeReadState(stateEngine, (HollowListSchema)schema, numShards));
+                populateTypeStateSnapshot(raf, buffer, new HollowListTypeReadState(stateEngine, (HollowListSchema)schema, numShards));
             }
         } else if(schema instanceof HollowSetSchema) {
             if(!filter.doesIncludeType(schema.getName())) {
 //                HollowSetTypeReadState.discardSnapshot(is, numShards);
             } else {
-                populateTypeStateSnapshot(raf, new HollowSetTypeReadState(stateEngine, (HollowSetSchema)schema, numShards));
+                populateTypeStateSnapshot(raf, buffer, new HollowSetTypeReadState(stateEngine, (HollowSetSchema)schema, numShards));
             }
         } else if(schema instanceof HollowMapSchema) {
             if(!filter.doesIncludeType(schema.getName())) {
 //                HollowMapTypeReadState.discardSnapshot(is, numShards);
             } else {
-                populateTypeStateSnapshot(raf, new HollowMapTypeReadState(stateEngine, (HollowMapSchema)schema, numShards));
+                populateTypeStateSnapshot(raf, buffer, new HollowMapTypeReadState(stateEngine, (HollowMapSchema)schema, numShards));
             }
         }
 
         return schema.getName();
     }
 
-    private void populateTypeStateSnapshot(RandomAccessFile raf, HollowTypeReadState typeState) throws IOException {
+    private void populateTypeStateSnapshot(RandomAccessFile raf, MappedByteBuffer buffer, HollowTypeReadState typeState) throws IOException {
         stateEngine.addTypeState(typeState);
-        typeState.readSnapshot(raf, stateEngine.getMemoryRecycler());
+        typeState.readSnapshot(raf, buffer, stateEngine.getMemoryRecycler());
     }
 
     private String readTypeStateDelta(DataInputStream is, HollowBlobHeader header) throws IOException {
