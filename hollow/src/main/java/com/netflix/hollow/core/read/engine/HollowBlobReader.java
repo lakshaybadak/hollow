@@ -17,6 +17,7 @@
 package com.netflix.hollow.core.read.engine;
 
 import com.netflix.hollow.core.HollowBlobHeader;
+import com.netflix.hollow.core.memory.encoding.BlobByteBuffer;
 import com.netflix.hollow.core.memory.encoding.VarInt;
 import com.netflix.hollow.core.read.engine.list.HollowListTypeReadState;
 import com.netflix.hollow.core.read.engine.map.HollowMapTypeReadState;
@@ -64,7 +65,7 @@ public class HollowBlobReader {
      * @param f the RandomAccessFile to read the snapshot from
      * @throws IOException if the snapshot could not be read
      */
-    public void readSnapshot(RandomAccessFile f, MappedByteBuffer buffer, BufferedWriter debug) throws IOException {
+    public void readSnapshot(RandomAccessFile f, BlobByteBuffer buffer, BufferedWriter debug) throws IOException {
         readSnapshot(f, buffer, debug, new HollowFilterConfig(true));
     }
 
@@ -77,7 +78,7 @@ public class HollowBlobReader {
      * @param filter the filtering configuration to filter the snapshot
      * @throws IOException if the snapshot could not be read
      */
-    public void readSnapshot(RandomAccessFile raf, MappedByteBuffer buffer, BufferedWriter debug, HollowFilterConfig filter) throws IOException {
+    public void readSnapshot(RandomAccessFile raf, BlobByteBuffer buffer, BufferedWriter debug, HollowFilterConfig filter) throws IOException {
         HollowBlobHeader header = readHeader(raf, false);
 
         notifyBeginUpdate();
@@ -131,7 +132,7 @@ public class HollowBlobReader {
         }
     }
 
-    private String readTypeFileSnapshot(RandomAccessFile raf, MappedByteBuffer buffer, BufferedWriter debug, HollowBlobHeader header, HollowFilterConfig filter) throws IOException {
+    private String readTypeFileSnapshot(RandomAccessFile raf, BlobByteBuffer buffer, BufferedWriter debug, HollowBlobHeader header, HollowFilterConfig filter) throws IOException {
         HollowSchema schema = HollowSchema.readFrom(raf);
 
         int numShards = readNumShards(raf);
@@ -167,7 +168,7 @@ public class HollowBlobReader {
         return schema.getName();
     }
 
-    private void populateTypeStateSnapshot(RandomAccessFile raf, MappedByteBuffer buffer, BufferedWriter debug, HollowTypeReadState typeState) throws IOException {
+    private void populateTypeStateSnapshot(RandomAccessFile raf, BlobByteBuffer buffer, BufferedWriter debug, HollowTypeReadState typeState) throws IOException {
         stateEngine.addTypeState(typeState);
         typeState.readSnapshot(raf, buffer, debug, stateEngine.getMemoryRecycler());
     }
