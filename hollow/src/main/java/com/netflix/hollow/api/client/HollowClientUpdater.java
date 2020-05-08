@@ -21,6 +21,7 @@ import com.netflix.hollow.api.custom.HollowAPI;
 import com.netflix.hollow.api.metrics.HollowConsumerMetrics;
 import com.netflix.hollow.api.metrics.HollowMetricsCollector;
 import com.netflix.hollow.core.HollowConstants;
+import com.netflix.hollow.core.memory.MemoryMode;
 import com.netflix.hollow.core.memory.pool.ArraySegmentRecycler;
 import com.netflix.hollow.core.read.engine.HollowReadStateEngine;
 import com.netflix.hollow.core.read.filter.HollowFilterConfig;
@@ -47,6 +48,7 @@ public class HollowClientUpdater {
     private final CopyOnWriteArrayList<HollowConsumer.RefreshListener> refreshListeners;
     private final HollowAPIFactory apiFactory;
     private final HollowObjectHashCodeFinder hashCodeFinder;
+    private final MemoryMode memoryMode;
     private final HollowConsumer.ObjectLongevityConfig objectLongevityConfig;
     private final HollowConsumer.DoubleSnapshotConfig doubleSnapshotConfig;
     private final HollowConsumerMetrics metrics;
@@ -59,6 +61,7 @@ public class HollowClientUpdater {
                                HollowAPIFactory apiFactory,
                                HollowConsumer.DoubleSnapshotConfig doubleSnapshotConfig,
                                HollowObjectHashCodeFinder hashCodeFinder,
+                               MemoryMode memoryMode,
                                HollowConsumer.ObjectLongevityConfig objectLongevityConfig,
                                HollowConsumer.ObjectLongevityDetector objectLongevityDetector,
                                HollowConsumerMetrics metrics,
@@ -71,6 +74,7 @@ public class HollowClientUpdater {
                 refreshListeners.stream().distinct().toArray(HollowConsumer.RefreshListener[]::new));
         this.apiFactory = apiFactory;
         this.hashCodeFinder = hashCodeFinder;
+        this.memoryMode = memoryMode;
         this.doubleSnapshotConfig = doubleSnapshotConfig;
         this.objectLongevityConfig = objectLongevityConfig;
         this.staleReferenceDetector.startMonitoring();
@@ -221,7 +225,7 @@ public class HollowClientUpdater {
     }
 
     private HollowDataHolder newHollowDataHolder() {
-        return new HollowDataHolder(newStateEngine(), apiFactory,
+        return new HollowDataHolder(newStateEngine(), apiFactory, memoryMode,
                 doubleSnapshotConfig, failedTransitionTracker,
                 staleReferenceDetector, objectLongevityConfig)
                 .setFilter(filter);
