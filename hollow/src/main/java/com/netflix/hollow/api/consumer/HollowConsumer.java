@@ -49,7 +49,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * A HollowConsumer is the top-level class used by consumers of Hollow data to initialize and keep up-to-date a local in-memory
@@ -485,7 +484,7 @@ public class HollowConsumer {
         public abstract InputStream getInputStream() throws IOException;
 
         public File getFile() throws IOException {
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
         }
 
         /**
